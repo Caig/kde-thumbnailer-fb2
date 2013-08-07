@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+Name=FictionBook documents
+Name[de]=FictionBook-Dateien
+Name[it]=Documenti FictionBook
+Name[zh_CN]=FictionBook 文档
+X-KDE-ServiceTypes=ThumbCreator
+MimeType=application/x-fictionbook+xml;
+CacheThumbnail=true
+X-KDE-Library=fb2thumbnail
