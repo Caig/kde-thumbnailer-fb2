@@ -46,7 +46,7 @@ bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
     QString fileExt = QFileInfo(path).suffix().toLower();
     if (fileExt != "fb2")
     {
-        qDebug() << "[fb2 thumbnailer]" << "Couldn't open" << path;
+        qDebug() << "[fb2 thumbnailer]" << "Couldn't parse" << path;
         qDebug() << "[fb2 thumbnailer]" << "Currently no support for" << fileExt << "files";
         return false;
     }
