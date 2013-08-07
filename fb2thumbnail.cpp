@@ -19,6 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "fb2thumbnail.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QXmlStreamReader>
 #include <QImage>
 #include <QDebug>
@@ -41,6 +42,15 @@ fb2Creator::~fb2Creator()
 
 bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
 {
+    //check if it's a fb2.zip file, currently not supported
+    QString fileExt = QFileInfo(path).suffix().toLower();
+    if (fileExt != "fb2")
+    {
+        qDebug() << "[fb2 thumbnailer]" << "Couldn't open" << path;
+        qDebug() << "[fb2 thumbnailer]" << "Currently no support for" << fileExt << "files";
+        return false;
+    }
+        
     QFile file(path);
     
     QXmlStreamReader qxml(&file);
