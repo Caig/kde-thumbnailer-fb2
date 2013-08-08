@@ -99,17 +99,34 @@ bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
             }
         }
 
-        if (qxml.name() == "binary" && qxml.isStartElement() && coverId != "")
+        if (qxml.name() == "binary" && qxml.isStartElement())
         {
-            if (qxml.attributes().value("id") == coverId)
+            if (coverId != "")
             {
-                qDebug() << "[fb2 thumbnailer]" << "Found cover data";
+                if (qxml.attributes().value("id") == coverId)
+                {
+                    qDebug() << "[fb2 thumbnailer]" << "Found cover data";
+
+                    coverBase64 = qxml.readElementText().toAscii();
+
+                    QImage coverImage;
+                    coverImage.loadFromData(QByteArray::fromBase64(coverBase64));
+                    
+                    img = coverImage.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                    break;
+                }
+            }
+            else //if coverId not found then the file doesn't follow the specification, try a workaround
+            {
+                qDebug() << "[fb2 thumbnailer]" << "Cover id not found";
+                qDebug() << "[fb2 thumbnailer]" << "Using first image as cover";
 
                 coverBase64 = qxml.readElementText().toAscii();
 
                 QImage coverImage;
                 coverImage.loadFromData(QByteArray::fromBase64(coverBase64));
-                
+
                 img = coverImage.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
                 break;
@@ -117,8 +134,6 @@ bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
         }
     }
 
-    if (coverId == "")
-        qDebug() << "[fb2 thumbnailer]" << "Cover id not found";
     if (coverBase64.isEmpty())
         qDebug() << "[fb2 thumbnailer]" << "Cover data not found";
 
