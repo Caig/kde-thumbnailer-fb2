@@ -20,6 +20,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include <QFile>
 #include <QFileInfo>
+#include <kzip.h>
 #include <QXmlStreamReader>
 #include <QImage>
 #include <QDebug>
@@ -42,29 +43,63 @@ fb2Creator::~fb2Creator()
 
 bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
 {
-    //check if it's a fb2.zip file, currently not supported
-    QString fileExt = QFileInfo(path).suffix().toLower();
-    if (fileExt != "fb2")
-    {
-        qDebug() << "[fb2 thumbnailer]" << "Couldn't parse" << path;
-        qDebug() << "[fb2 thumbnailer]" << "Currently no support for" << fileExt << "files";
-        return false;
-    }
-        
     QFile file(path);
     
-    QXmlStreamReader qxml(&file);
+    KZip zip(path);
+    QIODevice *device;
+    const KArchiveDirectory *dir;
+    const KZipFileEntry *fb2File;
+    
+    QXmlStreamReader qxml;
+    
+    QString fileExt = QFileInfo(path).suffix().toLower();
+    if (fileExt == "fb2")
+    {
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            qDebug() << "[fb2 thumbnailer]" << "Couldn't open" << path;
+            return false;
+        }
+        else
+        {
+            qDebug() << "[fb2 thumbnailer]" << "Reading" << path;
+            qxml.setDevice(&file);
+        }
+    }
+    else //if *.fb2.zip
+    {
+        if (!zip.open(QIODevice::ReadOnly))
+        {
+            qDebug() << "[fb2 thumbnailer]" << "Couldn't open" << path;
+            return false;
+        }
+        else
+        {
+            qDebug() << "[fb2 thumbnailer]" << "Reading" << path;
+
+            dir = zip.directory();
+
+            QStringList fileList = dir->entries();
+
+            for (int i=0; i < fileList.count(); i++)
+            {
+                if (fileList.at(i).endsWith(".fb2"))
+                {
+                    fb2File = static_cast<const KZipFileEntry*>(dir->entry(fileList.at(i)));
+                    device = fb2File->createDevice();
+                    qxml.setDevice(device);
+
+                    break;
+                }
+            }
+        }
+    }
+    
+    //----
 
     bool inCoverpage = false;
-    
     QString coverId = "";
-
     QByteArray coverBase64;
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        qDebug() << "[fb2 thumbnailer]" << "Couldn't open" << path;
-    else
-        qDebug() << "[fb2 thumbnailer]" << "Reading" << path;
     
     while(!qxml.atEnd() && !qxml.hasError())
     {
@@ -138,9 +173,19 @@ bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
         qDebug() << "[fb2 thumbnailer]" << "Cover data not found";
 
     if (qxml.hasError())
-        qDebug() << "[fb2 thumbnailer]" << "Parsing error";
+        qDebug() << "[fb2 thumbnailer]" << "Parsing error:" << qxml.errorString();
 
-    file.close();
+    qxml.clear();
+
+    if (fileExt == "fb2")
+        file.close();
+    else
+    {
+        device->close();
+        delete device;
+        //delete fb2File;
+        //delete dir;
+    }
 
     return !img.isNull();
 }
