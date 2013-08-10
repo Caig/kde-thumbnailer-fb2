@@ -1,3 +1,8 @@
+0.2
+-----
+Added support for zipped fb2 files
+Added support for not specification compliant files (no coverpage tag)
+
 0.1 (beta)
 -----
 First release
