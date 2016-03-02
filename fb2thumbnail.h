@@ -1,6 +1,6 @@
 /*
 This file is part of kde-thumbnailer-fb2
-Copyright (C) 2013 Caig <giacomosrv@gmail.com>
+Copyright (C) 2013-2016 Giacomo Barazzetti <giacomosrv@gmail.com>
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef FB2THUMBNAIL_H
 #define FB2THUMBNAIL_H
 
-#include <QObject>
+#include <QtCore/QObject>
 #include <kio/thumbcreator.h>
 
 class fb2Creator : public QObject, public ThumbCreator

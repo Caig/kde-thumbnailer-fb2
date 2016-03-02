@@ -1,6 +1,6 @@
 /*
 This file is part of kde-thumbnailer-fb2
-Copyright (C) 2013 Caig <giacomosrv@gmail.com>
+Copyright (C) 2013-2016 Giacomo Barazzetti <giacomosrv@gmail.com>
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,16 +18,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "fb2thumbnail.h"
 
-#include <QFile>
-#include <QFileInfo>
+#include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 #include <kzip.h>
-#include <QXmlStreamReader>
-#include <QImage>
-#include <QDebug>
+#include <QtCore/QXmlStreamReader>
+#include <QtGui/QImage>
+#include <QtCore/QDebug>
 
 extern "C"
 {
-    KDE_EXPORT ThumbCreator *new_creator()
+    Q_DECL_EXPORT ThumbCreator *new_creator()
     {
         return new fb2Creator();
     }
@@ -142,7 +142,7 @@ bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
                 {
                     qDebug() << "[fb2 thumbnailer]" << "Found cover data";
 
-                    coverBase64 = qxml.readElementText().toAscii();
+                    coverBase64 = qxml.readElementText().toLatin1();
 
                     QImage coverImage;
                     coverImage.loadFromData(QByteArray::fromBase64(coverBase64));
@@ -157,7 +157,7 @@ bool fb2Creator::create(const QString& path, int width, int height, QImage& img)
                 qDebug() << "[fb2 thumbnailer]" << "Cover id not found";
                 qDebug() << "[fb2 thumbnailer]" << "Using first image as cover";
 
-                coverBase64 = qxml.readElementText().toAscii();
+                coverBase64 = qxml.readElementText().toLatin1();
 
                 QImage coverImage;
                 coverImage.loadFromData(QByteArray::fromBase64(coverBase64));
