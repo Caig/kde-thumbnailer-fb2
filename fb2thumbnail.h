@@ -22,7 +22,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <QtCore/QObject>
 #include <kio/thumbcreator.h>
 
-class fb2Creator : public QObject, public ThumbCreator
+class Fb2Creator : public QObject, public ThumbCreator
 {
     Q_OBJECT
      

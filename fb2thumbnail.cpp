@@ -28,15 +28,16 @@ extern "C"
 {
     Q_DECL_EXPORT ThumbCreator *new_creator()
     {
-        return new fb2Creator();
+        return new Fb2Creator();
     }
 }
 
 fb2::OpenStrategy* openFile(const QString &path);
+bool loadCover(QIODevice *device, QImage &coverImage, int width, int height);
 
 //--------------------
 
-bool fb2Creator::create(const QString &path, int width, int height, QImage &img)
+bool Fb2Creator::create(const QString &path, int width, int height, QImage &img)
 {       
     fb2::OpenStrategy *openStrategy = openFile(path);
     if (openStrategy == NULL) {
@@ -48,12 +49,45 @@ bool fb2Creator::create(const QString &path, int width, int height, QImage &img)
     if (device == NULL) {
         return false;
     }
-    
+
+    bool foundCover = loadCover(device, img, width, height);
+    if (!foundCover) {
+        qDebug() << "[fb2 thumbnailer]" << "Cover not found";
+    }
+
+    delete openStrategy;
+    openStrategy = NULL;
+
+    return foundCover;
+}
+
+ThumbCreator::Flags Fb2Creator::flags() const
+{
+    return ThumbCreator::None;
+}
+
+//---------
+
+fb2::OpenStrategy* openFile(const QString &path)
+{
+    const QString fileExt = QFileInfo(path).suffix().toLower();
+    if (fileExt == fb2::FB2_EXT) {
+        return new fb2::OpenFb2(path);
+    } else if (fileExt == fb2::FB2ZIP_EXT) {
+        return new fb2::OpenZippedFb2(path);
+    }
+
+    return NULL;
+}
+
+//---------
+
+bool loadCover(QIODevice *device, QImage &coverImage, int width, int height)
+{
     QXmlStreamReader qxml(device);
 
     bool inCoverpage = false;
-    QString coverId = "";
-    QByteArray coverBase64;
+    QString coverId;
     
     while(!qxml.atEnd() && !qxml.hasError()) {
         qxml.readNext();
@@ -73,44 +107,31 @@ bool fb2Creator::create(const QString &path, int width, int height, QImage &img)
                 }
             }
 
-            if (coverId != "") {
+            if (!coverId.isEmpty()) {
                 coverId.remove("#");
                 qDebug() << "[fb2 thumbnailer]" << "Found cover id:" << coverId;
             }
         }
 
         if (qxml.name() == "binary" && qxml.isStartElement()) {
-            if (coverId != "") {
+            if (!coverId.isEmpty()) {
                 if (qxml.attributes().value("id") == coverId) {
                     qDebug() << "[fb2 thumbnailer]" << "Found cover data";
 
-                    coverBase64 = qxml.readElementText().toLatin1();
-
-                    QImage coverImage;
-                    coverImage.loadFromData(QByteArray::fromBase64(coverBase64));
-                    
-                    img = coverImage.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                    coverImage.loadFromData(QByteArray::fromBase64(qxml.readElementText().toLatin1()));
+                    coverImage = coverImage.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
                     break;
                 }
             } else { //if coverId not found then the file doesn't follow the specification, try a workaround
-                qDebug() << "[fb2 thumbnailer]" << "Cover id not found";
-                qDebug() << "[fb2 thumbnailer]" << "Using first image as cover";
+                qDebug() << "[fb2 thumbnailer]" << "Cover id not found => using first image";
 
-                coverBase64 = qxml.readElementText().toLatin1();
-
-                QImage coverImage;
-                coverImage.loadFromData(QByteArray::fromBase64(coverBase64));
-
-                img = coverImage.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                coverImage.loadFromData(QByteArray::fromBase64(qxml.readElementText().toLatin1()));
+                coverImage = coverImage.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
                 break;
             }
         }
-    }
-
-    if (coverBase64.isEmpty()) {
-        qDebug() << "[fb2 thumbnailer]" << "Cover data not found";
     }
 
     if (qxml.hasError()) {
@@ -119,27 +140,5 @@ bool fb2Creator::create(const QString &path, int width, int height, QImage &img)
 
     qxml.clear();
     
-    delete openStrategy;
-    openStrategy = NULL;
-
-    return !img.isNull();
-}
-
-ThumbCreator::Flags fb2Creator::flags() const
-{
-    return None;
-}
-
-//---------
-
-fb2::OpenStrategy* openFile(const QString &path)
-{
-    const QString fileExt = QFileInfo(path).suffix().toLower();
-    if (fileExt == fb2::FB2_EXT) {
-        return new fb2::OpenFb2(path);
-    } else if (fileExt == fb2::FB2ZIP_EXT) {
-        return new fb2::OpenZippedFb2(path);
-    }
-
-    return NULL;
+    return !coverImage.isNull();
 }
