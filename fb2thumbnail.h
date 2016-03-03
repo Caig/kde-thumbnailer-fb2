@@ -27,9 +27,7 @@ class fb2Creator : public QObject, public ThumbCreator
     Q_OBJECT
      
     public:
-        explicit fb2Creator();
-        virtual ~fb2Creator();
-        virtual bool create(const QString& path, int width, int height, QImage& img);
+        virtual bool create(const QString &path, int width, int height, QImage &img);
         virtual Flags flags() const;
 };
 
